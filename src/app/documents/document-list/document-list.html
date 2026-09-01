@@ -1,0 +1,20 @@
+@if (groups().length === 0) {
+  <p class="empty-state">No documents yet. Upload one above to get started.</p>
+}
+
+@for (group of groups(); track group.id) {
+  <section class="category-group">
+    <h2>{{ group.label }}</h2>
+    <ul class="document-list">
+      @for (doc of group.documents; track doc.id) {
+        <li>
+          <app-document-card
+            [document]="doc"
+            [selected]="selectedIds().has(doc.id)"
+            (selectionChange)="toggleSelect.emit(doc.id)"
+          />
+        </li>
+      }
+    </ul>
+  </section>
+}

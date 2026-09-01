@@ -1,0 +1,56 @@
+<section class="upload-section">
+  <app-document-upload />
+</section>
+
+<section class="filter-section">
+  <label for="category-filter">Filter by category</label>
+  <select id="category-filter" [value]="selectedCategory()" (change)="onFilterChange($event)">
+    <option value="all">All</option>
+    @for (category of categories; track category.id) {
+      <option [value]="category.id">{{ category.label }}</option>
+    }
+  </select>
+
+  @if (speechService.isSupported() && speechService.voices().length > 0) {
+    <label for="voice-select">Reading voice</label>
+    <select id="voice-select" [value]="speechService.selectedVoiceName() ?? ''" (change)="onVoiceChange($event)">
+      @for (voice of speechService.voices(); track voice.name) {
+        <option [value]="voice.name">{{ voice.name }} ({{ voice.lang }})</option>
+      }
+    </select>
+  }
+</section>
+
+<section class="report-section">
+  <button
+    type="button"
+    class="report-btn"
+    [disabled]="selectedIds().size < 2 || isGeneratingReport()"
+    (click)="onGenerateReport()"
+  >
+    {{ isGeneratingReport() ? 'Generating combined report…' : 'Generate combined report from selected (' + selectedIds().size + ')' }}
+  </button>
+  <p class="report-hint">Tick "Include in combined report" on two or more analyzed documents to compare them together.</p>
+
+  @if (reportError(); as error) {
+    <p class="status status--error" role="alert">{{ error }}</p>
+  }
+
+  @if (reports().length > 0) {
+    <h2>Combined reports</h2>
+    <ul class="reports-list">
+      @for (report of reports(); track report.id) {
+        <li class="report-card">
+          <p class="report-docs">Based on: {{ report.documentLabels.join(', ') }}</p>
+          <app-read-aloud [id]="report.id" [content]="report.content" />
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<app-document-list
+  [documents]="filteredDocuments()"
+  [selectedIds]="selectedIds()"
+  (toggleSelect)="onToggleSelect($event)"
+/>

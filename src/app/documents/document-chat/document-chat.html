@@ -1,0 +1,35 @@
+@if (document().status === 'analyzed') {
+  <section class="chat-section">
+    <h4>Ask a follow-up question</h4>
+
+    @if (messages().length > 0) {
+      <ul class="message-list" aria-live="polite">
+        @for (message of messages(); track message.id) {
+          <li class="message" [class.message--user]="message.role === 'user'">
+            <span class="message-role">{{ message.role === 'user' ? 'You' : 'Gemini' }}</span>
+            <p>{{ message.text }}</p>
+          </li>
+        }
+      </ul>
+    }
+
+    <form class="ask-form" (submit)="$event.preventDefault(); onAsk()">
+      <label [for]="'question-' + document().id">Your question</label>
+      <input
+        [id]="'question-' + document().id"
+        type="text"
+        [value]="question()"
+        (input)="onQuestionInput($event)"
+        placeholder="e.g. When is this due?"
+        [disabled]="isAsking()"
+      >
+      <button type="submit" [disabled]="!question().trim() || isAsking()">
+        {{ isAsking() ? 'Asking…' : 'Ask' }}
+      </button>
+    </form>
+
+    @if (errorMessage(); as error) {
+      <p class="status status--error" role="alert">{{ error }}</p>
+    }
+  </section>
+}

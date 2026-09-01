@@ -1,0 +1,25 @@
+<header class="app-header">
+  <h1 class="app-title">My Documents</h1>
+
+  @if (auth.currentUser(); as user) {
+    <div class="user-info">
+      @if (user.photoURL) {
+        <img [src]="user.photoURL" [alt]="''" class="avatar" width="32" height="32">
+      }
+      <span class="user-name">{{ user.displayName ?? user.email }}</span>
+      <button type="button" class="auth-btn" (click)="signOut()">Sign out</button>
+    </div>
+  } @else {
+    <button type="button" class="auth-btn auth-btn--primary" (click)="signIn()">
+      Sign in with Google
+    </button>
+  }
+</header>
+
+<main class="app-main">
+  @if (auth.currentUser()) {
+    <router-outlet />
+  } @else {
+    <p>Sign in with Google to view and upload your documents.</p>
+  }
+</main>
