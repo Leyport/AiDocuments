@@ -4,6 +4,19 @@ import { DocumentsService, AppDocument } from '../../documents.service';
 import { DocumentAnalysisService } from '../../document-analysis.service';
 import { DOCUMENT_CATEGORIES, DocumentCategoryId } from '../../document-category';
 
+/**
+ * Browsers report the MIME type of `.csv` files inconsistently (empty string, or
+ * `application/vnd.ms-excel` when Excel is installed). Normalise so the stored
+ * `mimeType` and the analysis step both see `text/csv`.
+ */
+function normalizeFileType(file: File): File {
+  const extension = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
+  if (extension === 'csv' && file.type !== 'text/csv') {
+    return new File([file], file.name, { type: 'text/csv', lastModified: file.lastModified });
+  }
+  return file;
+}
+
 @Component({
   selector: 'app-document-upload',
   imports: [],
@@ -24,7 +37,8 @@ export class DocumentUpload {
 
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedFile.set(input.files?.[0] ?? null);
+    const file = input.files?.[0] ?? null;
+    this.selectedFile.set(file ? normalizeFileType(file) : null);
   }
 
   protected onCategoryChange(categoryId: DocumentCategoryId): void {

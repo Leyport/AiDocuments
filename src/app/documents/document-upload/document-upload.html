@@ -1,14 +1,14 @@
 <form class="upload-form" (submit)="$event.preventDefault(); onSubmit()">
   <div class="field">
-    <label for="doc-file">Document (photo or PDF)</label>
+    <label for="doc-file">Document (photo, PDF or CSV)</label>
     <input
       id="doc-file"
       type="file"
-      accept="image/*,application/pdf"
+      accept="image/*,application/pdf,text/csv,.csv"
       aria-describedby="doc-file-hint"
       (change)="onFileSelected($event)"
     >
-    <p id="doc-file-hint" class="hint">Take a photo of the mail or choose an existing file.</p>
+    <p id="doc-file-hint" class="hint">Take a photo of the mail, or choose a PDF or CSV file.</p>
   </div>
 
   <fieldset class="field">

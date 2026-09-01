@@ -45,9 +45,12 @@ export class DocumentAnalysisService {
     await this.documentsService.updateDocument(document.id, { status: 'analyzing' });
 
     try {
-      const inlineDataPart = await this.toInlineDataPart(file, document.mimeType);
-      const prompt = this.buildPrompt(document.category);
-      const result = await this.model.generateContent([prompt, inlineDataPart]);
+      const isSpreadsheet = this.isTextualDocument(document.mimeType);
+      const filePart = isSpreadsheet
+        ? { text: `Contents of the uploaded file "${document.fileName}":\n\n${await file.text()}` }
+        : await this.toInlineDataPart(file, document.mimeType);
+      const prompt = this.buildPrompt(document.category, isSpreadsheet);
+      const result = await this.model.generateContent([prompt, filePart]);
       const analysis = JSON.parse(result.response.text()) as AnalysisResult;
 
       await this.documentsService.updateDocument(document.id, {
@@ -129,15 +132,25 @@ export class DocumentAnalysisService {
     return parts.join(' ');
   }
 
-  private buildPrompt(category: AppDocument['category']): string {
+  private buildPrompt(category: AppDocument['category'], isSpreadsheet: boolean): string {
+    const kind = isSpreadsheet
+      ? 'This document is a CSV spreadsheet, provided as raw text. Read the columns and rows, '
+        + 'and in "summary" describe what data it holds, call out notable figures, totals or trends, '
+        + 'and any rows that need attention. '
+      : '';
+
     if (category === 'france-house') {
-      return 'This document is in French and relates to a house in France. ' +
+      return `${kind}This document is in French and relates to a house in France. ` +
         'Translate the key text to English in "translatedText". ' +
         'In "summary", explain in plain English what the document says and ' +
         `what action, if any, the recipient needs to take, and by when. ${HTML_FORMAT_INSTRUCTION}`;
     }
-    return 'In "summary", explain in plain English what this document says and ' +
+    return `${kind}In "summary", explain in plain English what this document says and ` +
       `what action, if any, the recipient needs to take, and by when. ${HTML_FORMAT_INSTRUCTION}`;
+  }
+
+  private isTextualDocument(mimeType: string): boolean {
+    return mimeType.startsWith('text/');
   }
 
   private toInlineDataPart(file: Blob, mimeType: string): Promise<InlineDataPart> {
