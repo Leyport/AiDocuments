@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<DocumentStatus, string> = {
   template: `
     <article class="document-card">
       <div class="card-thumb" aria-hidden="true">
-        <span class="thumb-icon">{{ isImage() ? '🖼️' : '📄' }}</span>
+        <span class="thumb-icon">{{ thumbIcon() }}</span>
       </div>
 
       <div class="card-body">
@@ -87,7 +87,16 @@ export class DocumentCard {
   protected readonly detailsExpanded = signal(true);
   protected readonly isDeleting = signal(false);
 
-  protected readonly isImage = computed(() => this.document().mimeType.startsWith('image/'));
+  protected readonly thumbIcon = computed(() => {
+    const mimeType = this.document().mimeType;
+    if (mimeType.startsWith('image/')) {
+      return '🖼️';
+    }
+    if (mimeType === 'text/csv') {
+      return '📊';
+    }
+    return '📄';
+  });
 
   protected readonly categoryLabel = computed(() => {
     const category = DOCUMENT_CATEGORIES.find((c) => c.id === this.document().category);
