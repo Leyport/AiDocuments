@@ -35,6 +35,12 @@ export interface AppDocument {
   sizeBytes: number;
   status: DocumentStatus;
   summary?: string;
+  /** One-line, plain-text description of what the document is about (from analysis). */
+  subject?: string;
+  /** Date shown on the document itself, as an ISO string (YYYY-MM-DD, or partial YYYY-MM / YYYY). */
+  documentDate?: string;
+  /** Person who wrote or signed the document — for a medical letter, the doctor. */
+  author?: string;
   translatedText?: string;
   errorMessage?: string;
   createdAt: unknown;

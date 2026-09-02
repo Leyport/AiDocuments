@@ -11,6 +11,13 @@
     }
   </select>
 
+  <label for="sort-by">Sort by</label>
+  <select id="sort-by" [value]="sortBy()" (change)="onSortChange($event)">
+    <option value="added">Recently added</option>
+    <option value="date">Document date</option>
+    <option value="doctor">Doctor</option>
+  </select>
+
   @if (speechService.isSupported() && speechService.voices().length > 0) {
     <label for="voice-select">Reading voice</label>
     <select id="voice-select" [value]="speechService.selectedVoiceName() ?? ''" (change)="onVoiceChange($event)">
@@ -52,5 +59,6 @@
 <app-document-list
   [documents]="filteredDocuments()"
   [selectedIds]="selectedIds()"
+  [sortBy]="sortBy()"
   (toggleSelect)="onToggleSelect($event)"
 />
