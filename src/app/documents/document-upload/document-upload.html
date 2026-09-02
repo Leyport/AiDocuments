@@ -5,10 +5,22 @@
       id="doc-file"
       type="file"
       accept="image/*,application/pdf,text/csv,.csv"
-      aria-describedby="doc-file-hint"
+      aria-describedby="doc-file-hint doc-file-status"
       (change)="onFileSelected($event)"
     >
     <p id="doc-file-hint" class="hint">Take a photo of the mail, or choose a PDF or CSV file.</p>
+
+    @if (selectedFile()) {
+      <p id="doc-file-status" class="status" role="status" aria-live="polite">
+        @if (existingUpload()) {
+          <span class="status--warning">
+            ⚠ Already uploaded{{ existingUploadDate() ? ' on ' + existingUploadDate() : '' }}.
+          </span>
+        } @else {
+          <span class="status--ok">✓ New file — not uploaded yet.</span>
+        }
+      </p>
+    }
   </div>
 
   <fieldset class="field">
@@ -28,7 +40,7 @@
   </fieldset>
 
   <button type="submit" class="submit-btn" [disabled]="!selectedFile() || isUploading()">
-    {{ isUploading() ? 'Uploading…' : 'Upload' }}
+    {{ isUploading() ? 'Uploading…' : existingUpload() ? 'Upload anyway' : 'Upload' }}
   </button>
 
   @if (uploadProgress() !== undefined) {
