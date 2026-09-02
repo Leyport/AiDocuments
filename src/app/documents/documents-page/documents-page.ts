@@ -6,7 +6,7 @@ import { DocumentAnalysisService } from '../../document-analysis.service';
 import { ReportsService } from '../../reports.service';
 import { DOCUMENT_CATEGORIES, DocumentCategoryId } from '../../document-category';
 import { DocumentUpload } from '../document-upload/document-upload';
-import { DocumentList } from '../document-list/document-list';
+import { DocumentList, DocumentSort } from '../document-list/document-list';
 import { ReadAloud } from '../../read-aloud/read-aloud';
 import { SpeechService } from '../../speech.service';
 
@@ -25,6 +25,7 @@ export class DocumentsPage {
 
   protected readonly categories = DOCUMENT_CATEGORIES;
   protected readonly selectedCategory = signal<DocumentCategoryId | 'all'>('all');
+  protected readonly sortBy = signal<DocumentSort>('added');
   protected readonly selectedIds = signal<ReadonlySet<string>>(new Set());
   protected readonly isGeneratingReport = signal(false);
   protected readonly reportError = signal<string | undefined>(undefined);
@@ -52,6 +53,10 @@ export class DocumentsPage {
   protected onFilterChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value as DocumentCategoryId | 'all';
     this.selectedCategory.set(value);
+  }
+
+  protected onSortChange(event: Event): void {
+    this.sortBy.set((event.target as HTMLSelectElement).value as DocumentSort);
   }
 
   protected onToggleSelect(docId: string): void {

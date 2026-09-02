@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Storage, getDownloadURL, ref } from '@angular/fire/storage';
 import { AppDocument, DocumentsService, DocumentStatus } from '../../documents.service';
 import { DOCUMENT_CATEGORIES } from '../../document-category';
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<DocumentStatus, string> = {
 @Component({
   selector: 'app-document-card',
   imports: [DocumentChat, ReadAloud],
+  providers: [DatePipe],
   template: `
     <article class="document-card">
       <div class="card-thumb" aria-hidden="true">
@@ -35,6 +37,22 @@ const STATUS_LABELS: Record<DocumentStatus, string> = {
         </div>
 
         <span class="category-badge">{{ categoryLabel() }}</span>
+
+        @if (document().subject; as subject) {
+          <p class="doc-subject">{{ subject }}</p>
+        }
+
+        @if (displayDate() || document().author) {
+          <p class="doc-meta">
+            @if (displayDate(); as date) {
+              <span class="doc-date">{{ date }}</span>
+            }
+            @if (document().author; as author) {
+              <span class="doc-author">{{ author }}</span>
+            }
+          </p>
+        }
+
         <p class="status-text" [class.status-error]="document().status === 'error'">
           Status: {{ statusLabel() }}
         </p>
@@ -78,6 +96,7 @@ const STATUS_LABELS: Record<DocumentStatus, string> = {
 export class DocumentCard {
   private readonly storage = inject(Storage);
   private readonly documentsService = inject(DocumentsService);
+  private readonly datePipe = inject(DatePipe);
 
   readonly document = input.required<AppDocument>();
   readonly selected = input<boolean>(false);
@@ -101,6 +120,18 @@ export class DocumentCard {
   protected readonly categoryLabel = computed(() => {
     const category = DOCUMENT_CATEGORIES.find((c) => c.id === this.document().category);
     return category?.label ?? this.document().category;
+  });
+
+  /** Full ISO dates are shown localized; partial dates (YYYY or YYYY-MM) are shown as-is. */
+  protected readonly displayDate = computed(() => {
+    const raw = this.document().documentDate;
+    if (!raw) {
+      return '';
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return this.datePipe.transform(raw, 'mediumDate') ?? raw;
+    }
+    return raw;
   });
 
   protected readonly statusLabel = computed(() => STATUS_LABELS[this.document().status]);

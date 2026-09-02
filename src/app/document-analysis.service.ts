@@ -8,6 +8,9 @@ import { DOCUMENT_CATEGORIES } from './document-category';
 
 interface AnalysisResult {
   summary: string;
+  subject?: string;
+  documentDate?: string;
+  author?: string;
   translatedText?: string;
 }
 
@@ -27,6 +30,22 @@ export class DocumentAnalysisService {
       responseMimeType: 'application/json',
       responseSchema: Schema.object({
         properties: {
+          subject: Schema.string({
+            description:
+              'A single plain-text sentence (no HTML) describing what this document is about, ' +
+              'e.g. "Cardiology referral following an abnormal ECG".'
+          }),
+          documentDate: Schema.string({
+            description:
+              'The date shown on the document itself (when it was written or issued), as an ISO 8601 ' +
+              'date "YYYY-MM-DD". Use "YYYY-MM" or "YYYY" if only partially known. Omit entirely if the ' +
+              'document shows no date.'
+          }),
+          author: Schema.string({
+            description:
+              'The name of the person who wrote or signed the document. For a medical letter this is ' +
+              'the doctor or clinician, e.g. "Dr Jane Smith". Omit if it is not stated.'
+          }),
           summary: Schema.string({
             description: `A plain-English explanation of what the document says and any action needed. ${HTML_FORMAT_INSTRUCTION}`
           }),
@@ -34,7 +53,7 @@ export class DocumentAnalysisService {
             description: `An English translation of the document's key text. ${HTML_FORMAT_INSTRUCTION}`
           })
         },
-        optionalProperties: ['translatedText']
+        optionalProperties: ['subject', 'documentDate', 'author', 'translatedText']
       })
     }
   });
@@ -56,6 +75,9 @@ export class DocumentAnalysisService {
       await this.documentsService.updateDocument(document.id, {
         status: 'analyzed',
         summary: analysis.summary,
+        ...(analysis.subject?.trim() ? { subject: analysis.subject.trim() } : {}),
+        ...(analysis.documentDate?.trim() ? { documentDate: analysis.documentDate.trim() } : {}),
+        ...(analysis.author?.trim() ? { author: analysis.author.trim() } : {}),
         ...(analysis.translatedText ? { translatedText: analysis.translatedText } : {}),
         analyzedAt: serverTimestamp()
       });
@@ -107,7 +129,14 @@ export class DocumentAnalysisService {
       .map((document) => {
         const category = DOCUMENT_CATEGORIES.find((c) => c.id === document.category)?.label ?? document.category;
         const translation = document.translatedText ? `Translation: ${document.translatedText}\n` : '';
-        return `Document "${document.fileName}" (category: ${category}):\n${translation}Summary: ${document.summary ?? ''}`;
+        const meta = [
+          document.author ? `written by ${document.author}` : '',
+          document.documentDate ? `dated ${document.documentDate}` : ''
+        ]
+          .filter(Boolean)
+          .join(', ');
+        return `Document "${document.fileName}" (category: ${category}${meta ? `, ${meta}` : ''}):\n` +
+          `${translation}Summary: ${document.summary ?? ''}`;
       })
       .join('\n\n');
 
@@ -121,6 +150,11 @@ export class DocumentAnalysisService {
 
   private buildContextPrompt(document: AppDocument): string {
     const parts = [`You already summarized a document for the user as follows: "${document.summary ?? ''}"`];
+    if (document.author || document.documentDate) {
+      const by = document.author ? ` by ${document.author}` : '';
+      const on = document.documentDate ? ` on ${document.documentDate}` : '';
+      parts.push(`The document was written${by}${on}.`);
+    }
     if (document.translatedText) {
       parts.push(`You also translated it to English as follows: "${document.translatedText}"`);
     }
@@ -139,13 +173,19 @@ export class DocumentAnalysisService {
         + 'and any rows that need attention. '
       : '';
 
+    const metadata =
+      'Populate "subject" with a single plain-English sentence describing what the document is about. ' +
+      'Populate "documentDate" with the date shown on the document (ISO "YYYY-MM-DD") and "author" with ' +
+      'the name of the person who wrote or signed it — for a medical letter, the doctor. Omit ' +
+      '"documentDate" or "author" if the document does not state them. ';
+
     if (category === 'france-house') {
-      return `${kind}This document is in French and relates to a house in France. ` +
+      return `${kind}${metadata}This document is in French and relates to a house in France. ` +
         'Translate the key text to English in "translatedText". ' +
         'In "summary", explain in plain English what the document says and ' +
         `what action, if any, the recipient needs to take, and by when. ${HTML_FORMAT_INSTRUCTION}`;
     }
-    return `${kind}In "summary", explain in plain English what this document says and ` +
+    return `${kind}${metadata}In "summary", explain in plain English what this document says and ` +
       `what action, if any, the recipient needs to take, and by when. ${HTML_FORMAT_INSTRUCTION}`;
   }
 
