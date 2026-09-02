@@ -53,6 +53,9 @@ export interface UploadResult {
   progress$: Observable<number>;
 }
 
+/** Storage subdirectory that finished uploads live in: documents/{uid}/Uploaded/{docId}/{fileName}. */
+const UPLOADED_DIR = 'Uploaded';
+
 @Service()
 export class DocumentsService {
   private readonly firestore = inject(Firestore);
@@ -78,7 +81,7 @@ export class DocumentsService {
 
   async uploadDocument(file: File, category: DocumentCategoryId, uid: string): Promise<UploadResult> {
     const documentRef = doc(this.documentsCollection);
-    const storagePath = `documents/${uid}/${documentRef.id}/${file.name}`;
+    const storagePath = `documents/${uid}/${UPLOADED_DIR}/${documentRef.id}/${file.name}`;
     const storageRef = ref(this.storage, storagePath);
 
     const initialData: Omit<AppDocument, 'id'> = {
